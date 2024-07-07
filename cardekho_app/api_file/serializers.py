@@ -1,30 +1,34 @@
 from rest_framework import serializers
-from ..models import Carlist
+from ..models import Carlist, Showroomlist
+
+
+
+class ShowroomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Showroomlist
+        fields = "__all__"
 
 
 def alphanumberic(value):
     if not str(value).isalnum():
         raise serializers.ValidationError("only alphanumeric character are allowed")
 
-class CarSerializer(serializers.Serializer):
-    id = serializers.ImageField(read_only=True)
-    name = serializers.CharField()
-    description = serializers.CharField()
-    active = serializers.BooleanField(read_only=True)
-    chassisnumber = serializers.CharField(validators = [alphanumberic])
-    price = serializers.DecimalField(max_digits=9, decimal_places=2)
+class CarSerializer(serializers.ModelSerializer):
+    discounted_price = serializers.SerializerMethodField()
     
-    def create(self, validated_data):
-        return Carlist.objects.create(**validated_data)
+    class Meta:
+        model = Carlist
+        # fields = ['id', 'name', 'description'] #for Sepecific fields
+        fields = '__all__' #For all field
+        # exclude = ['price'] # Exclude fields
+
+    def get_discounted_price(self,object):
+        if object.price is None:
+            return None
+        discountprice = object.price - 5000
+        return discountprice
     
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.description = validated_data.get('description', instance.description)
-        instance.active = validated_data.get('active', instance.active)
-        instance.chassisnumber = validated_data.get('chassisnumber', instance.chassisnumber)
-        instance.price = validated_data.get('price', instance.price)
-        instance.save()
-        return instance
+    
         
     def validate_price(self, value):
         if value <= 20000.00:
@@ -37,5 +41,3 @@ class CarSerializer(serializers.Serializer):
         return data
     
     
-    # git remote add origin https://github.com/Azmattullah/Learn-DRF.git
-    # git remote add origin git@github.com:Azmattullah/Learn-DRF.git
